@@ -1,7 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant.configure("2") do |config|
+Vagrant.configure('2') do |config|
 
   # Strings identifying Bento baseboxes from https://github.com/opscode/bento
   %w{
@@ -27,9 +27,9 @@ Vagrant.configure("2") do |config|
     ]
   end
 
-  config.vm.synced_folder "./", "/vagrant"
-  config.vm.provision :shell, :path => "provision/01-install_ruby-install.sh"
-  config.vm.provision :shell, :path => "provision/02-install_ruby.sh"
-  config.vm.provision :shell, :path => "provision/03-install_fpm-cookery.sh"
+  config.vm.synced_folder '../', '/vagrant'
+  config.vm.provision :shell, :path => 'provision/01-install_ruby-install.sh'
+  config.vm.provision :shell, :path => 'provision/02-install_ruby.sh'
+  config.vm.provision :shell, :path => 'provision/03-install_fpm-cookery.sh'
 
 end
