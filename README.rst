@@ -1,7 +1,7 @@
 fpm-refinery
 ============
 
-*simple vagrant env for fpm/fpm-cookery*
+*simple vagrant env for automated package building using fpm, fpm-cookery or omnibus*
 
 Built with
 
@@ -10,8 +10,8 @@ Built with
 
 Planned features
 
-- Have it package itself :-)
-- Caching the gems and ruby source
-- puppet module??
+- Have it package itself and bootstrap from the same packages if found
+- Cache gem and ruby sources ... maybe with vagrant-cachier?
+- Support for building `omnibus-ruby <https://github.com/opscode/omnibus-ruby>`_ projects
 - Automated builds
 
