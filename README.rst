@@ -10,7 +10,8 @@ Built with
 
 Planned features
 
-- Caching
+- Have it package itself :-)
+- Caching the gems and ruby source
 - puppet module??
 - Automated builds
 
