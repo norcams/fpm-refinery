@@ -2,3 +2,6 @@
 .vagrant
 *~
 *.swp
+cache/
+pkg/
+tmp-*/
