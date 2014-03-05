@@ -16,6 +16,12 @@ exists() {
 
 if ! ((exists ruby-install) || (exists /usr/local/bin/ruby-install));
 then
+
+    # Only for centos/rhel: if package exists, use it
+    if [ $(ls -t ../pkg/ruby-install-*.rpm | head -n 1) ]; then
+        yum install -y $(ls -t ../pkg/ruby-install-*.rpm | head -n 1)
+        exit 0
+    fi
     tmp_dir="$(mktemp -d -t tmp.XXXXXXXX || echo "/tmp")"
     wget -O "${tmp_dir}/ruby-install-${version}.tar.gz" "${archive_url}"
     if [ -f "${tmp_dir}/ruby-install-${version}.tar.gz" ]; then
