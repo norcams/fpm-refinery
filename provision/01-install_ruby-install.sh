@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs ruby-install from github archive
 #
-version=0.4.0
+version=0.4.1
 archive_url="https://github.com/postmodern/ruby-install/archive/v${version}.tar.gz"
 
 # Check whether a command exists - returns 0 if it does, 1 if it does not
