@@ -14,4 +14,5 @@ Planned features
 - Cache gem and ruby sources ... maybe with vagrant-cachier?
 - Support for building `omnibus-ruby <https://github.com/opscode/omnibus-ruby>`_ projects
 - Automated builds
+- Add support for VMware Workstation and Fusion to the Vagrantfile
 
