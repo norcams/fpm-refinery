@@ -3,5 +3,6 @@
 *~
 *.swp
 cache/
+packages/
 pkg/
 tmp-*/
