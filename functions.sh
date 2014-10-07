@@ -26,8 +26,8 @@ build()
 
 package()
 {
-  if [[ ! $no_download -eq 1 && -n "$project_mirror" ]]; then
-    download "$project_mirror/recipe.rb" "$projectdir/recipe.rb"
+  if [[ ! $no_download -eq 1 && -n "$remote_project" ]]; then
+    download "$remote_project/recipe.rb" "$projectdir/recipe.rb"
   fi
   if [[ -s "$projectdir/recipe.rb" ]]; then
     "$prefix/embedded/bin/fpm-cook" package \
@@ -49,7 +49,7 @@ build_ruby_install()
   if ! exists "ruby-install"; then
     if [[ ! -s "$cache/$filename" ]]; then
       mkdir -p "$cache" || return $?
-      if [[ ! no_download -eq 1 ]]; then
+      if [[ ! $no_download -eq 1 ]]; then
         download "$url" "$cache/$filename" || return $?
       fi
     fi
