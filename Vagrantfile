@@ -2,7 +2,6 @@
 # vi: set ft=ruby :
 
 $provision=<<SHELL
-cd /tmp
 wget -qO- https://raw.githubusercontent.com/norcams/omnibus-drop/master/omnibus-drop.sh | \
   bash -s -- -M https://raw.githubusercontent.com/norcams/fpm-refinery/master fpm-refinery 0.1.0-1 --no-verify
 SHELL
