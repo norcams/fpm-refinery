@@ -10,7 +10,7 @@ preinstall()
 
     mkdir -p "$builddir"
     build || fail "Building components for $project $version package failed."
-    package || fail "Could create package for $project $version"
+    package || fail "Packaging $project $version failed."
     rm -rf "$buildir"
   else
     log "$filename already present, skipping build."
@@ -26,11 +26,17 @@ build()
 
 package()
 {
-  if [[ -n "$project_mirror" && (! -s "$projectdir/recipe.rb") ]]; then
+  if [[ ! $no_download -eq 1 && -n "$project_mirror" ]]; then
     download "$project_mirror/recipe.rb" "$projectdir/recipe.rb"
   fi
-  "$prefix/embedded/bin/fpm-cook" \
-    package --pkg-dir "$packagedir" --tmp-root "$builddir" "$projectdir/recipe.rb" || return $?
+  if [[ -s "$projectdir/recipe.rb" ]]; then
+    "$prefix/embedded/bin/fpm-cook" package \
+      --pkg-dir "$packagedir" --tmp-root "$builddir" \
+      "$projectdir/recipe.rb" || return $?
+  else
+    error "Missing $projectdir/recipe.rb"
+    return 1
+  fi
 }
 
 build_ruby_install()
