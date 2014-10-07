@@ -3,7 +3,7 @@
 
 $provision=<<SHELL
 cd /tmp
-wget -O - https://raw.githubusercontent.com/norcams/omnibus-drop/master/omnibus-drop.sh | \
+wget -qO- https://raw.githubusercontent.com/norcams/omnibus-drop/master/omnibus-drop.sh | \
   bash -s -- -M https://raw.githubusercontent.com/norcams/fpm-refinery/master fpm-refinery 0.1.0-1 --no-verify
 SHELL
 

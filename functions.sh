@@ -26,6 +26,9 @@ build()
 
 package()
 {
+  if [[ -n "$project_mirror" && (! -s "$projectdir/recipe.rb") ]]; then
+    download "$project_mirror/recipe.rb" "$projectdir/recipe.rb"
+  fi
   "$prefix/embedded/bin/fpm-cook" \
     package --pkg-dir "$packagedir" --tmp-root "$builddir" "$projectdir/recipe.rb" || return $?
 }
