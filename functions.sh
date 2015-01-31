@@ -4,14 +4,8 @@ preinstall()
 {
   # Build only if no package exists (for the current platform)
   if [[ ! -s "$packagedir/$filename" ]]; then
-    local prefix="/opt/$project"
-    local builddir="/tmp/$project-builddir"
-    local cache="$projectdir/cache"
-
-    mkdir -p "$builddir"
-    build || fail "Building components for $project $version package failed."
+    build   || fail "Building components for $project $version failed."
     package || fail "Packaging $project $version failed."
-    rm -rf "$buildir"
   else
     log "$filename already present, skipping build."
   fi
@@ -19,9 +13,28 @@ preinstall()
 
 build()
 {
-  build_ruby_install "0.4.3" "https://github.com/postmodern/ruby-install/archive/v${version}.tar.gz" || return $?
-  build_ruby         "2.1.3" "http://cache.ruby-lang.org/pub/ruby" || return $?
-  install_gem        "fpm-cookery" "0.25.0" || return $?
+  local prefix="/opt/$project"
+  local cache="$projectdir/cache"
+  local builddir="/tmp/$project-builddir"
+
+  mkdir -p "$builddir" || { error "Could not create $builddir"; return $?; }
+
+  build_ruby_install "0.4.3" \
+    "https://github.com/postmodern/ruby-install/archive/v0.4.3.tar.gz" \
+    "0ec8c23699aad534dcab549c0f6543e066725a62f5b3d7e8dae311c61df1aef3" \
+    || { error "Could not build ruby-install."; return 1; }
+
+  build_libyaml "0.1.6" \
+    "http://pyyaml.org/download/libyaml/yaml-0.1.6.tar.gz" \
+    "7da6971b4bd08a986dd2a61353bc422362bd0edcc67d7ebaac68c95f74182749" \
+    || { error "Could not build libyaml."; return 1; }
+
+  install_ruby "2.1.3" \
+    "http://cache.ruby-lang.org/pub/ruby" \
+    || { error "Could not build ruby."; return 1; }
+
+  install_gem "fpm-cookery" "0.25.0" \
+    || { error "Could not install gem."; return 1; }
 }
 
 package()
@@ -43,21 +56,11 @@ build_ruby_install()
 {
   local version="$1"
   local url="$2"
+  local checksum="$3"
   local filename="ruby-install-${version}.tar.gz"
-  export PATH="$PATH:/usr/local/bin"
 
-  if ! exists "ruby-install"; then
-    if [[ ! -s "$cache/$filename" ]]; then
-      mkdir -p "$cache" || return $?
-      if [[ ! $no_download -eq 1 ]]; then
-        download "$url" "$cache/$filename" || return $?
-      fi
-    fi
-    if [[ ! -s "$cache/$filename" ]]; then
-      error "Missing $cache/$filename, can't continue."
-      return 1
-    fi
-    cp -n "$cache/$filename" "$builddir" || return $?
+  if [[ ! -s /usr/local/bin/ruby-install ]]; then
+    download_and_verify || { error "Error downloading $url"; return 1; }
     cd "$builddir"
     tar -xvzf "$filename" || return $?
     cd "${filename%.tar.gz}"
@@ -67,7 +70,28 @@ build_ruby_install()
   fi
 }
 
-build_ruby()
+
+build_libyaml()
+{
+  local version="$1"
+  local url="$2"
+  local checksum="$3"
+  local filename="yaml-${version}.tar.gz"
+
+  if [[ ! -s $prefix ]]; then
+    download_and_verify || return $?
+    cd "$builddir"
+    tar -xvzf "$filename" || return $?
+    cd "${filename%.tar.gz}"
+    ./configure --prefix="$prefix/embedded" || return $?
+    make || return $?
+    $sudo make install || return $?
+  else
+    log "libyaml already present, skipping build."
+  fi
+}
+
+install_ruby()
 {
   local version="$1"
   local url="$2"
@@ -117,3 +141,21 @@ install_gem()
   fi
 }
 
+download_and_verify()
+{
+  if [[ ! -s "$cache/$filename" ]]; then
+    mkdir -p "$cache" || return $?
+    if [[ ! $no_download -eq 1 ]]; then
+      download "$url" "$cache/$filename" || return $?
+    fi
+  fi
+  if [[ ! -s "$cache/$filename" ]]; then
+    error "Missing $cache/$filename, can't continue."
+    return 1
+  fi
+  if [[ ! $no_verify -eq 1 ]]; then
+    verify "$cache/$filename" "$checksum" \
+      || { error "File checksum verification failed."; return $?; }
+  fi
+  cp -n "$cache/$filename" "$builddir" || return $?
+}

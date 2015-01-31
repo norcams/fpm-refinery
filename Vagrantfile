@@ -2,15 +2,18 @@
 # vi: set ft=ruby :
 
 $provision=<<SHELL
-wget -qO- https://raw.githubusercontent.com/norcams/omnibus-drop/master/omnibus-drop.sh | \
-  bash -s -- -M https://raw.githubusercontent.com/norcams/fpm-refinery/master fpm-refinery 0.1.0-1 --no-verify
+#curl -L https://raw.githubusercontent.com/norcams/omnibus-drop/master/omnibus-drop.sh | \
+#bash -s -- --remote https://raw.githubusercontent.com/norcams/fpm-refinery/master fpm-refinery 0.1.0-1 --no-verify
+cd /vagrant
+cat /vagrant/omnibus-drop/omnibus-drop.sh | \
+bash -s -- fpm-refinery 0.1.0-1 --no-verify
 SHELL
 
 Vagrant.configure('2') do |config|
 
   # Strings identifying Bento baseboxes from https://github.com/opscode/bento
   %w{
-    centos-6.5
+    centos-6.6
     centos-7.0
     debian-7.6
     fedora-20
@@ -36,8 +39,8 @@ Vagrant.configure('2') do |config|
   config.vm.synced_folder '../', '/vagrant'
   config.vm.provision :shell, :inline => $provision
 
-  if Vagrant.has_plugin?("vagrant-cachier")
-    config.cache.scope = :machine
-  end
+  #if Vagrant.has_plugin?("vagrant-cachier")
+  #  config.cache.scope = :machine
+  #end
 
 end
