@@ -1,19 +1,14 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-$provision=<<SHELL
-wget -qO- https://raw.githubusercontent.com/norcams/omnibus-drop/master/omnibus-drop.sh | \
-  bash -s -- -M https://raw.githubusercontent.com/norcams/fpm-refinery/master fpm-refinery 0.1.0-1 --no-verify
-SHELL
-
 Vagrant.configure('2') do |config|
 
   # Strings identifying Bento baseboxes from https://github.com/opscode/bento
   %w{
-    centos-6.5
+    centos-6.6
     centos-7.0
-    debian-7.6
-    fedora-20
+    debian-7.8
+    fedora-21
     ubuntu-14.04
   }.each do |basebox|
     # Easier instance naming without dots or dashes
@@ -22,6 +17,7 @@ Vagrant.configure('2') do |config|
       c.vm.box = "#{instance}"
       c.vm.hostname = "#{instance}.fpm-refinery.local"
       c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_#{basebox}_chef-provisionerless.box"
+      c.vm.provision :shell, :path => 'provision.sh', args: "#{instance}"
     end
   end
 
@@ -34,7 +30,6 @@ Vagrant.configure('2') do |config|
   end
 
   config.vm.synced_folder '../', '/vagrant'
-  config.vm.provision :shell, :inline => $provision
 
   if Vagrant.has_plugin?("vagrant-cachier")
     config.cache.scope = :machine
