@@ -17,7 +17,12 @@ Vagrant.configure('2') do |config|
       c.vm.box = "#{instance}"
       c.vm.hostname = "#{instance}.fpm-refinery.local"
       c.vm.box_url = "http://opscode-vm-bento.s3.amazonaws.com/vagrant/virtualbox/opscode_#{basebox}_chef-provisionerless.box"
-      c.vm.provision :shell, :path => 'provision.sh', args: "#{instance}"
+      if ENV.key?('FPM_REFINERY_SCRIPT')
+        $provision = ENV['FPM_REFINERY_SCRIPT']
+      else
+        $provision = 'provision.sh'
+      end
+      c.vm.provision :shell, :path => $provision, args: "#{instance}"
     end
   end
 

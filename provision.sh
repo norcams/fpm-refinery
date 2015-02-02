@@ -1,37 +1,38 @@
 #!/bin/bash
-shopt -s extglob
 
-ver="0.1.0"
+project="fpm-refinery"
+version="0.1.0-1"
 
-working_dir="$PWD"
-source_dir="${BASH_SOURCE[0]%/*}"
+projectdir="/vagrant/fpm-refinery"
+prefix="/opt/$project"
 
-#
-# Check whether a command exists - returns 0 if it does, 1 if it does not
-#
-exists() {
-    local cmd="$1"
-    if command -v $cmd >/dev/null 2>&1
-    then
-        return 0
-    else
-        return 1
-    fi
-}
+box="$1"
+packagedir="$projectdir/pkg/$box"
 
-#
-# Auto-detect the downloader.
-#
-if   exists "curl"; then downloader="curl"
-elif exists "wget"; then downloader="wget"
-fi
+baseurl="http://folk.uio.no/beddari/pkg"
+case "$box" in
+  fedora*|centos*) filename="${project}-${version}.x86_64.rpm" ;;
+  debian*|ubuntu*) filename="${project}_${version}_amd64.deb" ;;
+esac
+url="${baseurl}/${box}/${filename}"
 
-#
-# Auto-detect checksum verification util
-#
-if   exists "sha256sum"; then verifier="sha256sum"
-elif exists "shasum";    then verifier="shasum -a 256"
-fi
+case "$box" in
+  fedora21)
+    checksum=a71cf9f65dc6e5512174c5407eee3a7863a826d111dd978f6004b88c598a95e7
+    ;;
+  centos66)
+    checksum=94871f04046fb51f572e46412be301c03fa3e8954a68e822eac9ccac013bfd1e
+    ;;
+  centos70)
+    checksum=607e7b1535f1e9e04d974edd98cc4e0448c7c583ad45db2bba1db1a58e0069a2
+    ;;
+  debian78)
+    checksum=c1b5c3afc2ebf018e9b75308c45a537189e157ca50e0168a0de9506f08ab23fa
+    ;;
+  ubuntu1404)
+    checksum=548c2448388befbc25ff062e5ef1ce7111c29ee91af371b21d4c654fbe5857a7
+    ;;
+esac
 
 #
 # Prints a log message.
@@ -78,6 +79,17 @@ fail()
   exit -1
 }
 
+download_and_verify()
+{
+  if [[ ! -s "$packagedir/$filename" ]]; then
+    mkdir -p "$packagedir" || return $?
+    log "Downloading $url ..."
+    download "$url" "$packagedir/$filename" || return $?
+  fi
+  verify "$packagedir/$filename" "$checksum" \
+    || { error "File checksum verification failed."; return $?; }
+}
+
 #
 # Downloads a URL.
 #
@@ -88,6 +100,11 @@ download()
 
   [[ -d "$dest" ]] && dest="$dest/${url##*/}"
   [[ -f "$dest" ]] && return
+
+  # Auto-detect the downloader.
+  if   exists "curl"; then downloader="curl"
+  elif exists "wget"; then downloader="wget"
+  fi
 
   case "$downloader" in
     wget) wget --no-verbose -c -O "$dest.part" "$url" || return $? ;;
@@ -102,26 +119,17 @@ download()
 }
 
 #
-# Downloads a package.
-#
-download_package()
-{
-  if [[ -n "$url" ]]; then
-    log "Downloading package: $url"
-    mkdir -p "$packagedir" || return $?
-    download "$url" "$packagedir/$filename" || return $?
-  else
-    log "No url specified, package download skipped."
-  fi
-}
-
-#
 # Verify a file using a SHA256 checksum
 #
 verify()
 {
   local path="$1"
   local checksum="$2"
+
+  # Auto-detect checksum verification util
+  if   exists "sha256sum"; then verifier="sha256sum"
+  elif exists "shasum";    then verifier="shasum -a 256"
+  fi
 
   if [[ -z "$verifier" ]]; then
     error "Unable to find the checksum utility."
@@ -143,129 +151,44 @@ verify()
 }
 
 #
-# Verify downloaded package
+# Check whether a command exists - returns 0 if it does, 1 if it does not
 #
-verify_package()
+exists()
 {
-  verify "$packagedir/$filename" "$checksum"
+    local cmd="$1"
+    if command -v $cmd >/dev/null 2>&1
+    then
+        return 0
+    else
+        return 1
+    fi
 }
 
-#
-# Checks if it is possible to install this package type
-#
-is_supported()
+install_package()
 {
-  local supp="$1"
-  local fmt="$2"
-
-  local match='(^|\ )'$fmt'(\ |$)'
-  if [[ ! $supp =~ $match ]]; then
-    error "$fmt packages are not supported on this system"
-    return 1
-  else
-    return 0
-  fi
-}
-
-#
-# Check if package is already installed and return 0 if it is
-#
-installed()
-{
-  local format="$package_format"
   local package="$packagedir/$filename"
 
-  case "$format" in
-    rpm)
-      local data="$($sudo rpm -qp "$package" 2>/dev/null)"
-      $sudo rpm --quiet -qi "$data"
-      return $?
-      ;;
-    deb)
-      local name="$(dpkg -f "$package" Package 2>/dev/null)"
-      local vers="$(dpkg -f "$package" Version 2>/dev/null)"
-      local inst="$(dpkg-query -W -f '${Version}\n' $name 2>/dev/null)"
-      if [[ -n $name && ($vers == $inst) ]]; then
-        return 0
-      else
-        return 1
-      fi
-      ;;
-    *)
-      fail "Unknown package type $type: $package"
-      ;;
-  esac
-}
-
-#
-# Executes a package install based on package type
-#
-install_p()
-{
-  local format="$1"
-  local package="$2"
-
-  case "$format" in
-    rpm)
+  case "$box" in
+    fedora*|centos*|redhat*)
       $sudo yum install -y "$package" || return $?
       ;;
-    deb)
+    debian*|ubuntu*)
       $sudo env DEBIAN_FRONTEND=noninteractive dpkg -i "$package" || return $?
       $sudo env DEBIAN_FRONTEND=noninteractive apt-get install -f || return $?
       ;;
     *)
-      fail "Sorry, no support yet(?) for "$format" packages"
-      ;;
-  esac
-}
-
-#
-# Do the package installation
-#
-install_package()
-{
-  log "Installing $project $version from $packagedir/$filename"
-  install_p "$package_format" "$packagedir/$filename" || return $?
-  log "Successfully installed $project $version from $filename"
-}
-
-#
-# Parses command-line options
-#
-package_metadata()
-{
-  case $box in
-    centos*)
-      package_url=
-      package_filename=
-      package_checksum=
-      ;;
-    ubuntu1404)
-      package_url=
-      package_filename=
-      package_checksum=
-      ;;
-    *)
-      echo "No package metadata defined for $box"
-      return 1
+      fail "Sorry, no support yet(?) for "$box" packages"
       ;;
   esac
 }
 
 
-#
-# Main script loop
-#
-box=$1
-
-echo "We are on $box"
-package_metadata || exit 0
-download_package || fail "Package download failed."
-verify_package   || fail "Package checksum verification failed."
-
-if installed; then
-  log "Package $project $version is already installed."
+# Main logic
+# Install only if /opt/$project does not exist
+if [[ ! -d "/opt/$project" ]]; then
+  download_and_verify || fail "Error downloading/verifying $project $version"
+  install_package  || fail "Installing $project $version failed."
 else
-  install_package || fail "Installation failed."
+  log "/opt/$project already exists - skipping package installation."
 fi
 
