@@ -82,7 +82,7 @@ build()
 
   install_ruby "2.1.5" \
     "http://cache.ruby-lang.org/pub/ruby" \
-    "4305cc6ceb094df55210d83548dcbeb5117d74eea25196a9b14fa268d354b100" \
+    "0241b40f1c731cb177994a50b854fb7f18d4ad04dcefc18acc60af73046fb0a9" \
     || { error "Could not build ruby."; return 1; }
 
   install_gem "fpm-cookery" "0.25.0" \
