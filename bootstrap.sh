@@ -82,6 +82,7 @@ build()
 
   install_ruby "2.1.5" \
     "http://cache.ruby-lang.org/pub/ruby" \
+    "4305cc6ceb094df55210d83548dcbeb5117d74eea25196a9b14fa268d354b100" \
     || { error "Could not build ruby."; return 1; }
 
   install_gem "fpm-cookery" "0.25.0" \
@@ -90,13 +91,13 @@ build()
 
 package()
 {
-  if [[ -s "$projectdir/build.rb" ]]; then
+  if [[ -s "$projectdir/bootstrap.rb" ]]; then
     mkdir -p "$packagedir"
     "$prefix/embedded/bin/fpm-cook" package \
       --pkg-dir "$packagedir" --tmp-root "/tmp/$project-builddir" \
-      "$projectdir/build.rb" || return $?
+      "$projectdir/bootstrap.rb" || return $?
   else
-    error "Missing $projectdir/recipe.rb"
+    error "Missing $projectdir/bootstrap.rb"
     return 1
   fi
 }
@@ -126,7 +127,7 @@ build_libyaml()
   local checksum="$3"
   local filename="yaml-${version}.tar.gz"
 
-  if [[ ! -s $prefix ]]; then
+  if [[ ! -s "$prefix" ]]; then
     download_and_verify || return $?
     cd "$builddir"
     tar -xvzf "$filename" || return $?
@@ -143,17 +144,18 @@ install_ruby()
 {
   local version="$1"
   local url="$2"
+  local checksum="$3"
   local filename="ruby-${version}.tar.bz2"
   local no_dl=
   export PATH="$PATH:/usr/local/bin"
 
   if [[ ! -s "$prefix/embedded/bin/ruby" ]]; then
-    [[ $no_download -eq 1 ]] && no_dl="--no-download"
     if [[ -s "$cache/$filename" ]]; then
       cp -n "$cache/$filename" "$builddir"
       no_dl="--no-download"
     fi
     $sudo ruby-install -i "$prefix/embedded" -j2 -M "$url" -s "$builddir" "$no_dl" \
+      --sha256 "$checksum" \
       ruby "$version" -- --disable-install-doc --enable-shared || return $?
     # Shrink!
     $sudo rm -f "$prefix/embedded/lib/libruby-static.a"
@@ -193,18 +195,14 @@ download_and_verify()
 {
   if [[ ! -s "$cache/$filename" ]]; then
     mkdir -p "$cache" || return $?
-    if [[ ! $no_download -eq 1 ]]; then
-      download "$url" "$cache/$filename" || return $?
-    fi
+    download "$url" "$cache/$filename" || return $?
   fi
   if [[ ! -s "$cache/$filename" ]]; then
     error "Missing $cache/$filename, can't continue."
     return 1
   fi
-  if [[ ! $no_verify -eq 1 ]]; then
-    verify "$cache/$filename" "$checksum" \
-      || { error "File checksum verification failed."; return $?; }
-  fi
+  verify "$cache/$filename" "$checksum" \
+    || { error "File checksum verification failed."; return $?; }
   cp -n "$cache/$filename" "$builddir" || return $?
 }
 
