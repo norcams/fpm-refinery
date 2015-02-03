@@ -15,8 +15,7 @@ class PuppetOmnibus < FPM::Cookery::Recipe
 
   # Runtime package dependencies below
   platforms [:ubuntu, :debian] do
-    depends 'libffi6',
-            'libncurses5',
+    depends 'libncurses5',
             'libreadline6',
             'libssl1.0.0',
             'libtinfo5',
