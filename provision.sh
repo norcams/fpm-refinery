@@ -18,19 +18,19 @@ url="${baseurl}/${box}/${filename}"
 
 case "$box" in
   fedora21)
-    checksum=a71cf9f65dc6e5512174c5407eee3a7863a826d111dd978f6004b88c598a95e7
+    checksum=812616b57d9e2ec4dfcee4f333713aa860a2df2adc261f50813919c0abf15155
     ;;
   centos66)
-    checksum=94871f04046fb51f572e46412be301c03fa3e8954a68e822eac9ccac013bfd1e
+    checksum=5f19fd9f5d597a32dee76b8b1105940f21aba1045d77bffb7eacd09052aa8387
     ;;
   centos70)
-    checksum=607e7b1535f1e9e04d974edd98cc4e0448c7c583ad45db2bba1db1a58e0069a2
+    checksum=b536a4ca89088146c663f87f42351fdb75b09308f5a9c60c81f36553fa40093e
     ;;
   debian78)
-    checksum=c1b5c3afc2ebf018e9b75308c45a537189e157ca50e0168a0de9506f08ab23fa
+    checksum=d675b54a3c16ef7fdf53d636c0403fbc2800bc3b41abe22e944391539fa62653
     ;;
   ubuntu1404)
-    checksum=548c2448388befbc25ff062e5ef1ce7111c29ee91af371b21d4c654fbe5857a7
+    checksum=ebd375e6ed8e71081d910fbf746c2e243740d866931ac7c17d58e3aba3756bc5
     ;;
 esac
 
@@ -173,8 +173,8 @@ install_package()
       $sudo yum install -y "$package" || return $?
       ;;
     debian*|ubuntu*)
-      $sudo env DEBIAN_FRONTEND=noninteractive dpkg -i "$package" || return $?
-      $sudo env DEBIAN_FRONTEND=noninteractive apt-get install -f || return $?
+      $sudo env DEBIAN_FRONTEND=noninteractive dpkg -i "$package" || true
+      $sudo env DEBIAN_FRONTEND=noninteractive apt-get install -f -y --force-yes || return $?
       ;;
     *)
       fail "Sorry, no support yet(?) for "$box" packages"
